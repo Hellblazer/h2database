@@ -17,9 +17,9 @@ import java.util.function.Supplier;
 /**
  * This is a utility class with mathematical helper functions.
  */
-public class MathUtils {  
+public class MathUtils {
 
-    private static Supplier<SecureRandom> SECURE_RANDOM_SOURCE_PROVIDER = null;
+    private static Supplier<SecureRandom> SECURE_RANDOM_SOURCE_PROVIDER = () -> _defaultSecureRandom();
 
     public static Supplier<SecureRandom> getSecureRandomSource() {
         return SECURE_RANDOM_SOURCE_PROVIDER;
@@ -269,6 +269,78 @@ public class MathUtils {
      */
     public static int secureRandomInt(int lowerThan) {
         return getSecureRandom().nextInt(lowerThan);
+    }
+
+
+    /**
+     * The secure random object.
+     */
+    static SecureRandom secureRandom;
+
+    /**
+     * True if the secure random object is seeded.
+     */
+    static volatile boolean seeded;
+    
+    private static synchronized SecureRandom _defaultSecureRandom() {
+        if (secureRandom != null) {
+            return secureRandom;
+        }
+        // Workaround for SecureRandom problem as described in
+        // https://bugs.openjdk.java.net/browse/JDK-6202721
+        // Can not do that in a static initializer block, because
+        // threads are not started until after the initializer block exits
+        try {
+            secureRandom = SecureRandom.getInstance("SHA1PRNG");
+            // On some systems, secureRandom.generateSeed() is very slow.
+            // In this case it is initialized using our own seed implementation
+            // and afterwards (in the thread) using the regular algorithm.
+            Runnable runnable = () -> {
+                try {
+                    SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");
+                    byte[] seed = sr.generateSeed(20);
+                    synchronized (secureRandom) {
+                        secureRandom.setSeed(seed);
+                        seeded = true;
+                    }
+                } catch (Exception e) {
+                    // NoSuchAlgorithmException
+                    warn("SecureRandom", e);
+                }
+            };
+
+            try {
+                Thread t = new Thread(runnable, "Generate Seed");
+                // let the process terminate even if generating the seed is
+                // really slow
+                t.setDaemon(true);
+                t.start();
+                Thread.yield();
+                try {
+                    // normally, generateSeed takes less than 200 ms
+                    t.join(400);
+                } catch (InterruptedException e) {
+                    warn("InterruptedException", e);
+                }
+                if (!seeded) {
+                    byte[] seed = generateAlternativeSeed();
+                    // this never reduces randomness
+                    synchronized (secureRandom) {
+                        secureRandom.setSeed(seed);
+                    }
+                }
+            } catch (SecurityException e) {
+                // workaround for the Google App Engine: don't use a thread
+                runnable.run();
+                generateAlternativeSeed();
+            }
+
+        } catch (Exception e) {
+            // NoSuchAlgorithmException
+            warn("SecureRandom", e);
+            secureRandom = new SecureRandom();
+        }
+        return secureRandom;
     }
 
 }

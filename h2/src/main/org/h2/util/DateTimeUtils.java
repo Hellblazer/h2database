@@ -29,7 +29,8 @@ import org.h2.value.ValueTimestampTimeZone;
  * the day number (0 means 1970-01-01).
  */
 public class DateTimeUtils {
-    private static Supplier<Clock> CLOCK = () -> Clock.systemDefaultZone();
+    private static Clock DEFAULT_CLOCK = Clock.systemDefaultZone();
+    private static Supplier<Clock> CLOCK = () -> DEFAULT_CLOCK;
 
     public static Supplier<Clock> getClock() {
         return CLOCK;
