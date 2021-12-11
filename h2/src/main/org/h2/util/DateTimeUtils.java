@@ -7,7 +7,9 @@
  */
 package org.h2.util;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.util.function.Supplier;
 
 import org.h2.api.ErrorCode;
 import org.h2.engine.CastDataProvider;
@@ -27,6 +29,15 @@ import org.h2.value.ValueTimestampTimeZone;
  * the day number (0 means 1970-01-01).
  */
 public class DateTimeUtils {
+    private static Supplier<Clock> CLOCK = () -> Clock.systemDefaultZone();
+
+    public static Supplier<Clock> getClock() {
+        return CLOCK;
+    }
+
+    public static void setClock(Supplier<Clock> cLOCK) {
+        CLOCK = cLOCK;
+    }
 
     /**
      * The number of milliseconds per day.
@@ -127,7 +138,7 @@ public class DateTimeUtils {
      * @return current timestamp
      */
     public static ValueTimestampTimeZone currentTimestamp(TimeZoneProvider timeZone) {
-        return currentTimestamp(timeZone, Instant.now());
+        return currentTimestamp(timeZone, now());
     }
 
     /**
@@ -826,6 +837,13 @@ public class DateTimeUtils {
             nanos += NANOS_PER_DAY;
         }
         return nanos;
+    }
+
+    /**
+     * Provide the current instant
+     */
+    public static Instant now() {
+        return CLOCK.get().instant();
     }
 
     /**

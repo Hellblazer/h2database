@@ -257,7 +257,7 @@ public final class SessionLocal extends Session implements TransactionStore.Roll
         this.currentSchemaName = mainSchema != null ? mainSchema.getName()
                 : database.sysIdentifier(Constants.SCHEMA_MAIN);
         timeZone = DateTimeUtils.getTimeZone();
-        sessionStart = DateTimeUtils.currentTimestamp(timeZone, commandStartOrEnd = Instant.now());
+        sessionStart = DateTimeUtils.currentTimestamp(timeZone, commandStartOrEnd = DateTimeUtils.now());
     }
 
     public void setLazyQueryExecution(boolean lazyQueryExecution) {
@@ -1193,7 +1193,7 @@ public final class SessionLocal extends Session implements TransactionStore.Roll
         transitionToState(targetState, true);
         if (isOpen()) {
             currentCommand = command;
-            commandStartOrEnd = Instant.now();
+            commandStartOrEnd = DateTimeUtils.now();
             if (command != null) {
                 if (queryTimeout > 0) {
                     cancelAtNs = Utils.currentNanoTimePlusMillis(queryTimeout);

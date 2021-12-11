@@ -13,6 +13,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.zone.ZoneRules;
 import java.util.Locale;
+import java.util.function.Supplier;
 
 /**
  * Provides access to time zone API.
@@ -33,6 +34,16 @@ public abstract class TimeZoneProvider {
      * The number of cache elements (needs to be a power of 2).
      */
     private static final int CACHE_SIZE = 32;
+
+    private static  Supplier<TimeZoneProvider> DEFAULT_TIMEZONE_PROVIDER = () -> _default();
+
+    public static void setDefaultTimezoneProvider(Supplier<TimeZoneProvider> supplier) {
+        DEFAULT_TIMEZONE_PROVIDER = supplier;
+    }
+
+    public static Supplier<TimeZoneProvider> getDefaultTimezoneProvider() {
+        return DEFAULT_TIMEZONE_PROVIDER;
+    }
 
     /**
      * Returns the time zone provider with the specified offset.
@@ -161,18 +172,7 @@ public abstract class TimeZoneProvider {
      * @return the time zone provider for the system default time zone
      */
     public static TimeZoneProvider getDefault() {
-        ZoneId zoneId = ZoneId.systemDefault();
-        ZoneOffset offset;
-        if (zoneId instanceof ZoneOffset) {
-            offset = (ZoneOffset) zoneId;
-        } else {
-            ZoneRules rules = zoneId.getRules();
-            if (!rules.isFixedOffset()) {
-                return new WithTimeZone(zoneId);
-            }
-            offset = rules.getOffset(Instant.EPOCH);
-        }
-        return ofOffset(offset.getTotalSeconds());
+        return DEFAULT_TIMEZONE_PROVIDER.get();
     }
 
     /**
@@ -436,6 +436,21 @@ public abstract class TimeZoneProvider {
             return "TimeZoneProvider " + zoneId.getId();
         }
 
+    }
+    
+    private static TimeZoneProvider _default() { 
+        ZoneId zoneId = ZoneId.systemDefault();
+        ZoneOffset offset;
+        if (zoneId instanceof ZoneOffset) {
+            offset = (ZoneOffset) zoneId;
+        } else {
+            ZoneRules rules = zoneId.getRules();
+            if (!rules.isFixedOffset()) {
+                return new WithTimeZone(zoneId);
+            }
+            offset = rules.getOffset(Instant.EPOCH);
+        }
+        return ofOffset(offset.getTotalSeconds());
     }
 
 }
