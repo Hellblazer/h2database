@@ -111,11 +111,12 @@ public class DateTimeUtils {
     }
 
     /**
-     * Reset the cached calendar for default timezone, for example after
+     * Reset the cached calendar and Clock for default timezone, for example after
      * changing the default timezone.
      */
     public static void resetCalendar() {
         LOCAL = null;
+        DEFAULT_CLOCK = Clock.systemDefaultZone();
     }
 
     /**

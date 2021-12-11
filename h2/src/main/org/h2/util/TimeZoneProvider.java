@@ -35,8 +35,7 @@ public abstract class TimeZoneProvider {
      */
     private static final int CACHE_SIZE = 32;
 
-    private static TimeZoneProvider DEFAULT_TZ = _default();
-    private static Supplier<TimeZoneProvider> DEFAULT_TIMEZONE_PROVIDER = () -> DEFAULT_TZ;
+    private static Supplier<TimeZoneProvider> DEFAULT_TIMEZONE_PROVIDER = () -> _default();
 
     public static void setDefaultTimezoneProvider(Supplier<TimeZoneProvider> supplier) {
         DEFAULT_TIMEZONE_PROVIDER = supplier;
